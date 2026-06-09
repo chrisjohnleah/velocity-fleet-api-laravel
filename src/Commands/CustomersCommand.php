@@ -7,11 +7,14 @@ namespace ChrisJohnLeah\VelocityFleet\Laravel\Commands;
 use ChrisJohnLeah\VelocityFleet\Data\Customer;
 use ChrisJohnLeah\VelocityFleet\Exceptions\NotConnectedException;
 use ChrisJohnLeah\VelocityFleet\Exceptions\VelocityFleetException;
+use ChrisJohnLeah\VelocityFleet\Laravel\Support\RedactsSecrets;
 use ChrisJohnLeah\VelocityFleet\VelocityFleet;
 use Illuminate\Console\Command;
 
 class CustomersCommand extends Command
 {
+    use RedactsSecrets;
+
     protected $signature = 'velocity-fleet:customers';
 
     protected $description = 'List the customers linked to the authenticated Velocity Fleet user.';
@@ -21,12 +24,12 @@ class CustomersCommand extends Command
         try {
             $customers = $velocity->customers()->list();
         } catch (NotConnectedException $exception) {
-            $this->error($exception->getMessage());
+            $this->error($this->redact($exception->getMessage()));
             $this->line('Run `php artisan velocity-fleet:connect` first.');
 
             return self::FAILURE;
         } catch (VelocityFleetException $exception) {
-            $this->error('Velocity Fleet API error: '.$exception->getMessage());
+            $this->error('Velocity Fleet API error: '.$this->redact($exception->getMessage()));
 
             return self::FAILURE;
         }

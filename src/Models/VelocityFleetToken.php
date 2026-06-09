@@ -28,12 +28,20 @@ class VelocityFleetToken extends Model
     }
 
     /**
+     * The token columns are encrypted at rest by default (requires APP_KEY). The
+     * `encrypted` cast is transparent — the store reads/writes plain values.
+     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return [
-            'expires_at' => 'datetime',
-        ];
+        $casts = ['expires_at' => 'datetime'];
+
+        if (config('velocity-fleet.encrypt_tokens', true) !== false) {
+            $casts['access_token'] = 'encrypted';
+            $casts['refresh_token'] = 'encrypted';
+        }
+
+        return $casts;
     }
 }

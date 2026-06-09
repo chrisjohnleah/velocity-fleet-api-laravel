@@ -6,6 +6,7 @@ use ChrisJohnLeah\VelocityFleet\Auth\StoredToken;
 use ChrisJohnLeah\VelocityFleet\Contracts\TokenStore;
 use ChrisJohnLeah\VelocityFleet\Laravel\EloquentTokenStore;
 use ChrisJohnLeah\VelocityFleet\Laravel\Facades\VelocityFleet as VelocityFleetFacade;
+use ChrisJohnLeah\VelocityFleet\Laravel\FleetManager;
 use ChrisJohnLeah\VelocityFleet\Laravel\Models\VelocityFleetToken;
 use ChrisJohnLeah\VelocityFleet\VelocityFleet;
 use ChrisJohnLeah\VelocityFleet\VelocityFleetConnector;
@@ -42,8 +43,9 @@ it('round-trips a token and keeps a single row that put() overwrites', function 
     expect($store->get())->toBeNull();
 });
 
-it('exposes the facade backed by the client', function () {
-    expect(VelocityFleetFacade::getFacadeRoot())->toBeInstanceOf(VelocityFleet::class);
+it('exposes the facade backed by the FleetManager, which wraps the client', function () {
+    expect(VelocityFleetFacade::getFacadeRoot())->toBeInstanceOf(FleetManager::class)
+        ->and(app(FleetManager::class)->client())->toBeInstanceOf(VelocityFleet::class);
 });
 
 it('auto-seeds a static access token from config into an empty store', function () {

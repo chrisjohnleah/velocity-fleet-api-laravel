@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace ChrisJohnLeah\VelocityFleet\Laravel\Commands;
 
 use ChrisJohnLeah\VelocityFleet\Contracts\TokenStore;
+use ChrisJohnLeah\VelocityFleet\Laravel\Support\RedactsSecrets;
 use Illuminate\Console\Command;
 
 class StatusCommand extends Command
 {
+    use RedactsSecrets;
+
     protected $signature = 'velocity-fleet:status';
 
     protected $description = 'Show the current Velocity Fleet connection status.';
@@ -26,7 +29,7 @@ class StatusCommand extends Command
         $this->info('Connected to Velocity Fleet.');
         $this->table(['Field', 'Value'], [
             ['Mode', $token->refreshToken !== null ? 'refresh token' : 'static access token'],
-            ['Access token', $token->accessToken === '' ? '(pending first refresh)' : substr($token->accessToken, 0, 6).'…'],
+            ['Access token', $token->accessToken === '' ? '(pending first refresh)' : $this->maskToken($token->accessToken)],
             ['Refresh token', $token->refreshToken !== null ? 'present' : 'missing'],
             ['Expires at', $token->expiresAt?->format('Y-m-d H:i:s') ?? 'unknown'],
             ['Expired', $token->hasExpired() ? 'YES — will refresh on next call' : 'no'],

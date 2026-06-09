@@ -105,6 +105,60 @@ Want outgoing Velocity API calls to show up in Laravel Telescope or Nightwatch? 
 composer require saloonphp/laravel-plugin
 ```
 
+## Fleet platform (v0.2)
+
+On top of the thin bridge, the package ships an opt-in fleet platform. **Every subsystem below defaults to OFF/safe** — upgrading changes nothing until you enable it in `config/velocity-fleet.php`.
+
+### Fleet queries
+
+`VelocityFleet::fleet($customerId)` returns a chainable `DeviceCollection`:
+
+```php
+use ChrisJohnLeah\VelocityFleet\Laravel\Facades\VelocityFleet;
+
+$nearby = VelocityFleet::fleet($customer->id)
+    ->moving()
+    ->inDriverGroup(7)
+    ->near($lat, $lon, 5.0);   // within 5 km
+```
+
+Scopes: `moving()`, `idling()`, `ignitionOn()`, `ignitionOff()`, `online()`, `offline()`, `inDeviceGroup()`, `inDriverGroup()`, `near()`, `byRegistration()`, `withDriver()`.
+
+### Caching (stale-while-revalidate)
+
+`VelocityFleet::cached()->positions($id)` serves positions from a refresh-rate-aware cache with `Cache::lock` single-flight, so concurrent callers/workers collapse to one upstream POST per window. The TTL comes from the API's own live-map hints, clamped by `cache.min_ttl`. **For multi-server / Octane, use a shared atomic-lock store (redis/database/memcached)** — `velocity-fleet:doctor` warns otherwise.
+
+### Change-detection events
+
+Enable `polling`, run a queue worker and the scheduler, and the poller fires events as devices change:
+
+`IgnitionTurnedOn` · `IgnitionTurnedOff` · `VehicleStartedMoving` · `VehicleStopped` · `DeviceWentStale` · `DeviceCameBackOnline`, plus the umbrella `DevicePositionsUpdated`. Listen for them like any Laravel event.
+
+### Geofences & notifications
+
+Define circle or polygon `Geofence`s; with `geofencing` on, the matcher fires `VehicleEnteredGeofence` / `VehicleExitedGeofence` / `VehicleDwelledInGeofence` / `VehicleArrived`. With `notifications` on, arrival/offline/geofence/speeding/idling notifications are sent to configured routes, throttled to avoid storms. Speeding/idling are **heuristics** derived from poll cadence.
+
+### History (opt-in, encrypted)
+
+With `history.enabled`, each poll ingests positions into `velocity_fleet_device_positions` (PII columns encrypted at rest, idempotent upsert). `retention.positions_days` (default 90) prunes old rows. **Off by default** — see GDPR notes in [SECURITY.md](SECURITY.md).
+
+### Commands
+
+```bash
+php artisan velocity-fleet:poll {customer?}     # dispatch a poll (also scheduled when polling on)
+php artisan velocity-fleet:prune-positions      # retention prune (scheduled daily when history on)
+php artisan velocity-fleet:encrypt-tokens       # migrate any plaintext token rows to ciphertext
+php artisan velocity-fleet:doctor               # CI-runnable config/security self-check
+```
+
+### Testing toolkit
+
+```php
+use ChrisJohnLeah\VelocityFleet\Laravel\Testing\InteractsWithVelocityFleet;
+use ChrisJohnLeah\VelocityFleet\Laravel\Testing\FakeDevice;
+// fakeFleet([...]) / FakeDevice::make([...]) / FakeDevicePositions::withDevices([...]) / FleetScenario
+```
+
 ## Testing
 
 ```bash

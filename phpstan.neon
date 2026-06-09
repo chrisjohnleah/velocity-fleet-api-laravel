@@ -7,3 +7,7 @@ parameters:
         - src
     tmpDir: build/phpstan
     treatPhpDocTypesAsCertain: false
+    excludePaths:
+        # Consumer-facing test scaffolding — exercised by host-app test suites,
+        # not by the library core, so it reads as "unused" to static analysis.
+        - src/Testing/InteractsWithVelocityFleet.php

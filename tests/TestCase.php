@@ -19,6 +19,15 @@ abstract class TestCase extends Orchestra
         return [VelocityFleetServiceProvider::class];
     }
 
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        // A deterministic key so the encrypted token columns work under test.
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
+
     protected function defineDatabaseMigrations(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
